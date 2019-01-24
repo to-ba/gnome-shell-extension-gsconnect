@@ -632,7 +632,7 @@ const Service = GObject.registerClass({
 
         // Bluetooth.ChannelService
         try {
-            //this.bluetooth = new Bluetooth.ChannelService();
+            this.bluetooth = new Bluetooth.ChannelService();
         } catch (e) {
             if (this.bluetooth) {
                 this.bluetooth.destroy();
