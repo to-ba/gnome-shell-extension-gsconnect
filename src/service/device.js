@@ -544,23 +544,38 @@ var Device = GObject.registerClass({
         }
     }
 
-    createTransfer(params) {
-        params.device = this;
+    createTransfer(info) {
+        try {
+            info.device = this;
 
-        switch (this.connection_type) {
-            case 'tcp':
-                return new Lan.Transfer(params);
+            if (this.connection_type === 'tcp') {
+                return new Lan.Transfer(info);
+            } else if (this.connection_type === 'bluetooth') {
+                let muxer = this._channel.muxer;
+                let transfer;
 
-            case 'bluetooth':
-                return new Bluetooth.Transfer(params);
+                // Download
+                if (info.output_stream) {
+                    transfer = muxer._channels.get(info.uuid);
+                    Object.assign(transfer, info);
+                    return transfer;
 
-            // Fallback to returning a mock transfer that always appears to fail
-            default:
-                return {
-                    uuid: 'mock-transfer',
-                    download: () => false,
-                    upload: () => false
-                };
+                // Upload
+                } else if (info.input_stream) {
+                    info.muxer = muxer;
+                    transfer = new Bluetooth.Transfer(info);
+                    muxer._channels.set(transfer.uuid, transfer);
+                    return transfer;
+                }
+            }
+
+            return {
+                uuid: 'mock-transfer',
+                download: () => false,
+                upload: () => false
+            };
+        } catch (e) {
+            debug(e, this.name);
         }
     }
 
